@@ -3,9 +3,16 @@ name = "death"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = ["pybind11>=3.0.1"]
 
 [dependency-groups]
-dev = [
-    "pytest>=8.4.2",
-]
+dev = ["pytest>=8.4.2"]
+
+[build-system]
+requires = ["scikit-build-core", "pybind11>=3.0.1"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+cmake.source-dir = "."
+wheel.install-dir = "death"
+cmake.targets = ["_libdeath"]
