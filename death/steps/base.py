@@ -24,36 +24,37 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import numpy as np
+from abc import ABC, abstractmethod
 
-from .dataset import DEADataset
-from .pipeline import DEAPipeline
-from .result import DEAResult
+from ..dataset import DEADataset
 
 
-def run_dea(
-    k_matrix: np.ndarray,
-    design_matrix: np.ndarray,
-    gene_names: np.ndarray,
-    sample_names: np.ndarray = None,
-    **kwargs,
-) -> DEAResult:
+class BaseStep(ABC):
     """
-    Simple wrapper to run differential expression analysis.
+    Base class for all pipeline steps
     """
-    dataset = DEADataset(
-        k_matrix=k_matrix,
-        design_matrix=design_matrix,
-        gene_names=gene_names,
-        sample_names=sample_names,
-    )
-    pipeline = DEAPipeline.default()
-    return pipeline.run(dataset, **kwargs)
 
+    def __init__(self, name: str, **kwargs):
+        """
+        :param name: Name of the step (snake_case)
+        :param kwargs: Additional parameters for the step
+        """
+        self.name = name
+        self.params = kwargs
+        self._fitted = False
 
-__all__ = [
-    "DEAPipeline",
-    "DEADataset",
-    "DEAResult",
-    "run_dea",
-]
+    @abstractmethod
+    def run(self, dataset: DEADataset, **kwargs) -> None:
+        """
+        Run the step with the given dataset.
+        """
+        pass
+
+    def validate_input(self, dataset: DEADataset) -> None:
+        """
+        Validate the input dataset.
+        """
+        pass
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.params})"

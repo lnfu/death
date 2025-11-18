@@ -30,43 +30,145 @@
 #define IRLSSOLVER_HPP
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "Distribution.hpp"
 
-class IRLSSolver {
- private:
-  std::unique_ptr<Distribution> dist_;
+namespace death {
 
+/**
+ * @brief Result container for IRLS fitting with lazy-evaluated statistics
+ */
+class IRLSResult {
+ public:
+  IRLSResult(int n_genes, int n_samples, int n_params, const double* X)
+      : n_genes_(n_genes),
+        n_samples_(n_samples),
+        n_params_(n_params),
+        X_(X),
+        beta_(n_genes * n_params),
+        weights_(n_genes * n_samples),
+        converged_(n_genes) {}
+
+  int n_genes() const { return n_genes_; }
+  int n_samples() const { return n_samples_; }
+  int n_params() const { return n_params_; }
+
+  std::vector<double>& beta() { return beta_; }
+  const std::vector<double>& beta() const { return beta_; }
+
+  std::vector<double>& weights() { return weights_; }
+  const std::vector<double>& weights() const { return weights_; }
+
+  std::vector<uint8_t>& converged() { return converged_; }
+  const std::vector<uint8_t>& converged() const { return converged_; }
+
+  /**
+   * @brief Compute standard errors (SE) for all genes
+   * @return Vector of SE (n_genes × n_params), computed on first call and
+   * cached
+   */
+  const std::vector<double>& standard_errors();
+
+  /**
+   * @brief Compute covariance matrices for all genes
+   * @return Vector of covariance matrices (n_genes × n_params × n_params)
+   */
+  const std::vector<double>& covariance_matrices();
+
+  /**
+   * @brief Compute SE for a single gene (without caching)
+   * @param gene_idx Gene index
+   * @return Vector of SE (n_params)
+   */
+  std::vector<double> standard_errors_single(int gene_idx) const;
+
+  /**
+   * @brief Compute covariance matrix for a single gene (without caching)
+   * @param gene_idx Gene index
+   * @return Covariance matrix (n_params × n_params) in row-major order
+   */
+  std::vector<double> covariance_matrix_single(int gene_idx) const;
+
+ private:
+  std::vector<double> compute_se_from_weights(const double* w) const;
+  std::vector<double> compute_cov_from_weights(const double* w) const;
+
+  int n_genes_;
+  int n_samples_;
+  int n_params_;
+  const double* X_;  // Design matrix (n_samples × n_params)
+
+  // Basic IRLS results
+  std::vector<double> beta_;     // (n_genes × n_params)
+  std::vector<double> weights_;  // (n_genes × n_samples) - final IRLS weights
+  std::vector<uint8_t> converged_;  // (n_genes)
+
+  // Cached statistics (lazy evaluation with std::optional)
+  mutable std::optional<std::vector<double>> se_cache_;  // (n_genes × n_params)
+  mutable std::optional<std::vector<double>>
+      cov_cache_;  // (n_genes × n_params × n_params)
+};
+
+/**
+ * @brief Iteratively Reweighted Least Squares solver for GLMs
+ */
+class IRLSSolver {
  public:
   struct Options {
+    int n_threads = 4;
     int max_iter = 100;
     double tol = 1e-8;
-
-    // bool use_offset = false;
-    // bool estimate_dispersion = false;
 
     static Options defaults() { return Options{}; }
   };
 
-  struct Result {
-    std::vector<double> coefficients;
-    std::vector<double> fitted_values;
-    std::vector<double> std_errors;
-    double deviance;
-    int iterations;
-    bool converged;
-  };
+  IRLSSolver(std::shared_ptr<Distribution> dist,        // exponential family
+             const double* X,                           // design matrix
+             const double* sf,                          // size factors
+             int n_genes, int n_samples, int n_params,  // dimensions
+             Options opts = Options::defaults()         // options
+             )
+      : dist_(std::move(dist)),
+        X_(X),
+        sf_(sf),
+        n_genes_(n_genes),
+        n_samples_(n_samples),
+        n_params_(n_params),
+        opts_(opts) {}
 
-  // TODO(Enfu) remove this default constructor
-  IRLSSolver() : dist_(std::make_unique<NormalDistribution>()) {}
+  /**
+   * @brief Fit GLM for all genes using IRLS
+   * @param Y Count matrix (n_genes × n_samples) in row-major order
+   * @return IRLSResult containing beta and final weights
+   */
+  IRLSResult fit(const double* Y);
 
-  IRLSSolver(std::unique_ptr<Distribution> dist) : dist_(std::move(dist)) {}
+ private:
+  std::shared_ptr<Distribution> dist_;
+  const double* X_;   // Design matrix
+  const double* sf_;  // Size factors
+  int n_genes_;
+  int n_samples_;
+  int n_params_;
+  Options opts_;
 
-  Result fit(const double* X, int n, int p,  // design matrix
-             const double* y,                // response
-             // const double *offset = nullptr, // optional offset
-             const Options& opts = Options::defaults());
+  static void* thread_worker(void* arg);
+
+  /**
+   * @brief Fit a single gene using IRLS
+   * @param gene_idx Gene index (for distribution variance lookup)
+   * @param y Counts for this gene (n_samples)
+   * @param beta_out Output buffer for beta (n_params)
+   * @param w_out Output buffer for final weights (n_samples)
+   * @param workspace Preallocated workspace
+   * @return true if converged, false otherwise
+   */
+  bool fit_single(int gene_idx, const double* y, double* beta_out,
+                  double* w_out, double* workspace);
 };
+
+}  // namespace death
 
 #endif  // IRLSSOLVER_HPP

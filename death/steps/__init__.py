@@ -24,36 +24,22 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import numpy as np
-
-from .dataset import DEADataset
-from .pipeline import DEAPipeline
-from .result import DEAResult
-
-
-def run_dea(
-    k_matrix: np.ndarray,
-    design_matrix: np.ndarray,
-    gene_names: np.ndarray,
-    sample_names: np.ndarray = None,
-    **kwargs,
-) -> DEAResult:
-    """
-    Simple wrapper to run differential expression analysis.
-    """
-    dataset = DEADataset(
-        k_matrix=k_matrix,
-        design_matrix=design_matrix,
-        gene_names=gene_names,
-        sample_names=sample_names,
-    )
-    pipeline = DEAPipeline.default()
-    return pipeline.run(dataset, **kwargs)
-
+from .dispersion import MomentDispersionStep
+from .fitting import NegativeBinomialFittingStep
+from .normalization import (
+    PoscountNormalizationStep,
+    RatioNormalizationStep,
+)
+from .testing import WaldTestingStep
 
 __all__ = [
-    "DEAPipeline",
-    "DEADataset",
-    "DEAResult",
-    "run_dea",
+    # Normalization steps
+    "RatioNormalizationStep",
+    "PoscountNormalizationStep",
+    # Dispersion steps
+    "MomentDispersionStep",
+    # Fitting steps
+    "NegativeBinomialFittingStep",
+    # Testing steps
+    "WaldTestingStep",
 ]

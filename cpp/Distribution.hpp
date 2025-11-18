@@ -29,11 +29,12 @@
 #ifndef DISTRIBUTION_HPP
 #define DISTRIBUTION_HPP
 
+#include <algorithm>
 #include <cmath>
 
+namespace death {
+
 class Distribution {
- private:
-  /* data */
  public:
   virtual ~Distribution() = default;
 
@@ -41,10 +42,11 @@ class Distribution {
   virtual double inverse_link(double eta) const = 0;    // g^(-1)(η)
   virtual double derivative_link(double mu) const = 0;  // g'(μ)
 
-  virtual double variance(double mu) const = 0;  // V(μ)
+  virtual double variance(double mu, int idx) const = 0;  // V(μ)
 };
 
 class NormalDistribution : public Distribution {
+ public:
   // Identity link
   double link(double mu) const override { return mu; }
 
@@ -53,50 +55,65 @@ class NormalDistribution : public Distribution {
   double derivative_link(double mu) const override { return 1.0; }
 
   // Constant variance
-  double variance(double mu) const override { return 1.0; }
+  double variance(double mu, int idx) const override { return 1.0; }
 };
 
 class PoissonDistribution : public Distribution {
+ public:
   // Log link
   double link(double mu) const override { return std::log(mu); }
 
-  double inverse_link(double eta) const override { return std::exp(eta); }
+  double inverse_link(double eta) const override {
+    return (eta > 700.0) ? 1e300 : std::exp(eta);  // TODO(Enfu)
+  }
+
   double derivative_link(double mu) const override { return 1.0 / mu; }
+
   // Variance = μ
-  double variance(double mu) const override { return mu; }
+  double variance(double mu, int idx) const override { return mu; }
 };
 
 class BernoulliDistribution : public Distribution {
+ public:
   // Logit link
   double link(double mu) const override { return std::log(mu / (1.0 - mu)); }
+
   double inverse_link(double eta) const override {
+    // TODO(Enfu)
+    if (eta > 20.0) return 0.9999999999;  // 1 - 1e-10
+    if (eta < -20.0) return 1e-10;
     return 1.0 / (1.0 + std::exp(-eta));
   }
+
   double derivative_link(double mu) const override {
     return 1.0 / (mu * (1.0 - mu));
   }
+
   // Variance = μ(1-μ)
-  double variance(double mu) const override { return mu * (1.0 - mu); }
+  double variance(double mu, int idx) const override { return mu * (1.0 - mu); }
 };
 
 class NegativeBinomialDistribution : public Distribution {
  private:
-  double dispersion_;
+  const double* dispersions_;
 
  public:
-  // TODO(Enfu): Another link function is possible for Negative Binomial
-  //             so we may want to make it configurable (or just move to
-  //             another class)
+  explicit NegativeBinomialDistribution(const double* dispersions)
+      : dispersions_(dispersions) {}
 
   double link(double mu) const override { return std::log(mu); }
 
-  double inverse_link(double eta) const override { return std::exp(eta); }
+  double inverse_link(double eta) const override {
+    return (eta > 700.0) ? 1e300 : std::exp(eta);  // TODO(Enfu)
+  }
 
   double derivative_link(double mu) const override { return 1.0 / mu; }
 
-  double variance(double mu) const override {
-    return mu + (mu * mu) / dispersion_;
+  double variance(double mu, int idx) const override {
+    return mu + (mu * mu) * dispersions_[idx];
   }
 };
+
+}  // namespace death
 
 #endif  // DISTRIBUTION_HPP
