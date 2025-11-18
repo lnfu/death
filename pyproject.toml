@@ -2,20 +2,22 @@
 name = "death"
 version = "0.1.0"
 description = "Differential Expression Analysis Tool for High-throughput NGS"
-requires-python = ">=3.13"
-authors = [
-    {name = "Enfu", email = "efliao@cs.nycu.edu.tw"}
-]
+requires-python = ">=3.10"
+authors = [{ name = "Enfu", email = "efliao@cs.nycu.edu.tw" }]
 dependencies = [
     "matplotlib>=3.10.7",
-    "numpy>=2.3.4",
-    "pybind11>=3.0.1",
-    "pybind11-stubgen>=2.5.5",
-    "scikit-learn>=1.7.2",
+    "numpy>=2.2.6",
+    "pandas>=2.3.3",
+    "typer>=0.20.0",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.4.2"]
+dev = [
+    "pybind11-stubgen>=2.5.5",
+    "pytest>=9.0.1",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.5",
+]
 
 [build-system]
 requires = ["scikit-build-core", "pybind11>=3.0.1"]
@@ -23,12 +25,12 @@ build-backend = "scikit_build_core.build"
 
 [tool.ruff]
 line-length = 80
-target-version = "py313"
+target-version = "py310"
 
 [tool.scikit-build]
 cmake.source-dir = "."
 cmake.targets = ["_core"]
-cmake.define = {"DEATH_BUILD_TESTS" = "OFF"}
+cmake.define = { "DEATH_BUILD_TESTS" = "OFF" }
 wheel.install-dir = "death"
 
 [project.optional-dependencies]
