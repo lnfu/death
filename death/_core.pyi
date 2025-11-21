@@ -1,5 +1,5 @@
 """
-IRLS Solver core module
+Core module for death package
 """
 
 from __future__ import annotations
@@ -7,60 +7,44 @@ import numpy
 import numpy.typing
 import typing
 
-__all__: list[str] = ["IRLSOptions", "IRLSResult", "IRLSSolver"]
+__all__: list[str] = ["OLSOptions", "OLSResult", "OLSSolver"]
 
-class IRLSOptions:
+class OLSOptions:
     def __init__(self) -> None: ...
-    @property
-    def max_iter(self) -> int: ...
-    @max_iter.setter
-    def max_iter(self, arg0: typing.SupportsInt) -> None: ...
-    @property
-    def tol(self) -> float: ...
-    @tol.setter
-    def tol(self, arg0: typing.SupportsFloat) -> None: ...
+    def __repr__(self) -> str: ...
 
-class IRLSResult:
+class OLSResult:
+    def __repr__(self) -> str: ...
     @property
-    def coefficients(self) -> list[float]: ...
+    def coefficients(self) -> numpy.typing.NDArray[numpy.float64]: ...
     @property
-    def converged(self) -> bool: ...
-    @property
-    def deviance(self) -> float: ...
-    @property
-    def fitted_values(self) -> list[float]: ...
-    @property
-    def iterations(self) -> int: ...
-    @property
-    def std_errors(self) -> list[float]: ...
+    def fitted_values(self) -> numpy.typing.NDArray[numpy.float64]: ...
 
-class IRLSSolver:
+class OLSSolver:
     def __init__(self) -> None:
         """
-        Initialize IRLS Solver
+        Initialize OLS Solver
         """
-    def fit(
+    def solve(
         self,
         X: numpy.typing.NDArray[numpy.float64],
-        y: numpy.typing.NDArray[numpy.float64],
-        opts: IRLSOptions = ...,
-    ) -> IRLSResult:
+        Y: numpy.typing.NDArray[numpy.float64],
+        opts: typing.Any = None,
+    ) -> OLSResult:
         """
-        Fit an IRLS model.
+        Solve an OLS problem.
 
         Parameters
         ----------
         X : numpy.ndarray, shape (n, p)
-            Design matrix
-        y : numpy.ndarray, shape (n,)
-            Response vector
-        opts : IRLSOptions, optional
-            Solver options
+            Design matrix (must be C-contiguous)
+        Y : numpy.ndarray, shape (n, nrhs)
+            Response matrix (must be C-contiguous)
+        opts : OLSOptions, optional
+            Solver options. If None, uses default options.
 
         Returns
         -------
-        IRLSResult
-            Fitting results
+        OLSResult
+            Solving results with coefficients and fitted values
         """
-
-__version__: str = "0.1.0"

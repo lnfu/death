@@ -31,6 +31,7 @@ find_package(LAPACK REQUIRED)
 pybind11_add_module(_core MODULE
     bindings/module.cpp
     IRLSSolver.cpp
+    OLSSolver.cpp
 )
 
 # Include directories

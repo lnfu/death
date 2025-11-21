@@ -26,45 +26,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef IRLSSOLVER_HPP
-#define IRLSSOLVER_HPP
+#ifndef OLSSOLVER_HPP
+#define OLSSOLVER_HPP
 
-#include <memory>
 #include <vector>
 
-#include "Distribution.hpp"
-
-class IRLSSolver {
- private:
+class OLSSolver {
  public:
   struct Options {
-    int max_iter = 100;
-    double tol = 1e-8;
-
-    // bool use_offset = false;
-    // bool estimate_dispersion = false;
+    // bool fit_intercept = true;
 
     static Options defaults() { return Options{}; }
   };
 
   struct Result {
+    int nrhs;
     std::vector<double> coefficients;
     std::vector<double> fitted_values;
-    std::vector<double> std_errors;
-    double deviance;
-    int iterations;
-    bool converged;
+
+    // std::vector<double> std_errors;
+    // double r_squared;
   };
 
-  // TODO(Enfu) remove dist parameter default value
   Result solve(const double* X,  // design matrix
-               const double* y,  // response
-               int n, int p,
-               std::unique_ptr<Distribution> dist =
-                   std::make_unique<NormalDistribution>(),  // distribution
-               const Options& opts = Options::defaults()
-               // TODO(Enfu) const double *offset = nullptr, // optional offset
-  );
+               const double* Y,  // response
+               int n,            // number of samples
+               int p,            // number of features
+               int nrhs,         // number of right-hand sides
+               const Options& opts = Options::defaults());
 };
 
-#endif  // IRLSSOLVER_HPP
+#endif  // OLSSOLVER_HPP

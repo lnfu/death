@@ -5,7 +5,6 @@ description = "Differential Expression Analysis Tool for High-throughput NGS"
 requires-python = ">=3.10"
 authors = [{ name = "Enfu", email = "efliao@cs.nycu.edu.tw" }]
 dependencies = [
-    "matplotlib>=3.10.7",
     "numpy>=2.2.6",
     "pandas>=2.3.3",
     "typer>=0.20.0",
