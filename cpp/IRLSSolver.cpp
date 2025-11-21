@@ -32,31 +32,33 @@
 
 #include <cmath>
 
-IRLSSolver::Result IRLSSolver::fit(const double* X, int n, int p,
-                                   const double* y,
-                                   //    const double *offset,
-                                   const Options& opts) {
+IRLSSolver::Result IRLSSolver::solve(
+    const double* X,  // design matrix
+    const double* y,  // response
+    int n, int p,
+    std::unique_ptr<Distribution> dist,  // distribution
+    const Options& opts) {
   std::vector<double> eta(n), mu(n), z(n), w(n);
   std::vector<double> beta(p, 0.0);
 
   for (int iter = 0; iter < opts.max_iter; ++iter) {
     // linear predictor: η = g(μ)
     for (int i = 0; i < n; ++i) {
-      eta[i] = dist_->link(mu[i]);
+      eta[i] = dist->link(mu[i]);
       // if (offset)
       //     eta[i] += offset[i];
     }
 
     // working response: z = η + (y - μ) * g'(μ)
     for (int i = 0; i < n; ++i) {
-      double g_prime = dist_->derivative_link(mu[i]);
+      double g_prime = dist->derivative_link(mu[i]);
       z[i] = eta[i] + (y[i] - mu[i]) * g_prime;
     }
 
     // working weights: wi = 1 / [ (g'(μi))^2 * V(μi) ]
     for (int i = 0; i < n; ++i) {
-      double var = dist_->variance(mu[i]);
-      double g_prime = dist_->derivative_link(mu[i]);
+      double var = dist->variance(mu[i]);
+      double g_prime = dist->derivative_link(mu[i]);
       w[i] = 1.0 / (g_prime * g_prime * var);
     }
 
