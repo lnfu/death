@@ -24,3 +24,26 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+
+import logging
+
+import pandas as pd
+import typer
+
+from .pipeline import Pipeline
+
+logging.basicConfig(level=logging.DEBUG)
+
+
+def main(count_filepath: str):
+    logging.info(f"Loading read count data from {count_filepath}")
+    df = pd.read_csv(count_filepath, sep="\t", header=0, index_col=0)
+
+    k_matrix = df.to_numpy()
+
+    pipeline = Pipeline(k_matrix)
+    pipeline.run()
+
+
+if __name__ == "__main__":
+    typer.run(main)
